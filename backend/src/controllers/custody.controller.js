@@ -77,7 +77,7 @@ export async function custodyByDepartment(req, res, next) {
 export async function checkoutAsset(req, res, next) {
   const client = await pool.connect();
   try {
-    const { asset_id, employee_id, department_id, due_date, assigned_by, condition_on_issue, notes } = req.body;
+    const { asset_id, employee_id, department_id, assigned_date, due_date, assigned_by, condition_on_issue, notes } = req.body;
 
     if (!asset_id || !employee_id || !department_id) {
       throw new ApiError(400, "ต้องระบุ asset_id, employee_id และ department_id");
@@ -93,10 +93,10 @@ export async function checkoutAsset(req, res, next) {
 
     const custody = await client.query(
       `INSERT INTO custody_records
-        (asset_id, employee_id, department_id, due_date, assigned_by, condition_on_issue, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (asset_id, employee_id, department_id, assigned_date, due_date, assigned_by, condition_on_issue, notes)
+       VALUES ($1, $2, $3, COALESCE($4, CURRENT_DATE), $5, $6, $7, $8)
        RETURNING *`,
-      [asset_id, employee_id, department_id, due_date || null, assigned_by || null, condition_on_issue || null, notes || null]
+      [asset_id, employee_id, department_id, assigned_date || null, due_date || null, assigned_by || null, condition_on_issue || null, notes || null]
     );
 
     await client.query(`UPDATE assets SET status = 'in_use', updated_at = now() WHERE id = $1`, [asset_id]);

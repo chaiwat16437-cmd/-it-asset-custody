@@ -96,15 +96,13 @@ npm run dev             # http://localhost:5173
 
 **อยากได้โดเมนของตัวเอง + HTTPS:** ใช้ **Control Panel > Login Portal > Advanced > Reverse Proxy** ของ Synology สร้าง proxy rule ชี้โดเมนย่อย (เช่น `asset.mynas.synology.me`) ไปที่พอร์ต frontend (8080) แล้วขอใบรับรอง SSL ฟรีจาก Let's Encrypt ผ่าน **Control Panel > Security > Certificate** ได้เลย — ถ้าทำแบบนี้ต้องอัปเดต `VITE_API_URL`/`CORS_ORIGIN` ใน `.env` ให้เป็นโดเมนใหม่แล้ว rebuild ใหม่ (เพราะ `VITE_API_URL` ถูกฝังเข้า JS bundle ตอน build ไม่ใช่ค่าที่เปลี่ยนตอน runtime ได้)
 
-## Deploy ขึ้น production (บนคลาวด์)
+## Deploy ขึ้น production (บนคลาวด์) — Supabase + Render + Netlify
 
-ดูขั้นตอนละเอียดที่ผมแนะนำไว้ในแชท (Supabase + Railway + Vercel) — สรุปสั้นๆ:
+1. **Database (Supabase)**: สร้างโปรเจกต์ใหม่บน [supabase.com](https://supabase.com) → เข้า **SQL Editor** → รัน `backend/src/migrations/001_init.sql` แล้วตามด้วย `002_seed.sql` (ถ้าต้องการข้อมูลตัวอย่าง) → คัดลอก connection string จาก **Settings > Database > Connection string > URI**
+2. **Backend (Render)**: เข้า [render.com](https://render.com) → **New > Web Service** → เชื่อม GitHub repo → ตั้ง **Root Directory** เป็น `backend` (Render จะเจอ `Dockerfile` แล้ว build ให้อัตโนมัติ) → เพิ่ม environment variables: `DATABASE_URL` (จาก Supabase ข้อ 1) และ `CORS_ORIGIN` (ใส่ `*` ไปก่อน ค่อยกลับมาแก้ทีหลัง) → deploy แล้วคัดลอก URL ที่ได้ (เช่น `https://it-asset-custody.onrender.com`)
+3. **Frontend (Netlify)**: เข้า [netlify.com](https://netlify.com) → **Add new site > Import an existing project** → เชื่อม repo เดียวกัน → ตั้ง **Base directory** เป็น `frontend` (Netlify จะอ่าน `frontend/netlify.toml` ที่มีอยู่แล้วเพื่อ build และตั้งค่า SPA fallback ให้เอง) → ก่อน deploy ให้เปิด **Site settings > Environment variables** เพิ่ม `VITE_API_URL` เป็น URL ของ backend จาก Render + `/api` (เช่น `https://it-asset-custody.onrender.com/api`) → Deploy แล้วคัดลอก URL ที่ได้ (เช่น `https://it-asset-custody.netlify.app`)
+4. กลับไปที่ Render (backend) → แก้ `CORS_ORIGIN` จาก `*` ให้เป็น URL จริงของ Netlify → บันทึกแล้วปล่อยให้ redeploy อัตโนมัติ
 
-1. **Database**: สร้างโปรเจกต์ใหม่บน [supabase.com](https://supabase.com) → เข้า SQL Editor → รัน `backend/src/migrations/001_init.sql` แล้วตามด้วย `002_seed.sql` (ถ้าต้องการข้อมูลตัวอย่าง) → คัดลอก connection string (Settings > Database > Connection string > URI)
-2. **Backend**: deploy โฟลเดอร์ `backend/` ขึ้น [railway.app](https://railway.app) (เชื่อม GitHub repo แล้วเลือกโฟลเดอร์ `backend`) ตั้ง environment variables: `DATABASE_URL` (จาก Supabase), `CORS_ORIGIN` (ใส่ URL ของ frontend หลัง deploy เสร็จ)
-3. **Frontend**: deploy โฟลเดอร์ `frontend/` ขึ้น [vercel.com](https://vercel.com) (เชื่อม GitHub repo เดียวกัน เลือก root directory เป็น `frontend`) ตั้ง environment variable `VITE_API_URL` เป็น URL ของ backend บน Railway + `/api`
-4. กลับไปอัปเดต `CORS_ORIGIN` บน Railway ให้ตรงกับ URL จริงของ Vercel แล้ว redeploy backend
-
-**หมายเหตุสำคัญ:** ไฟล์ `frontend/vercel.json` ที่มีอยู่แล้วในโปรเจกต์ทำหน้าที่ rewrite ทุก route กลับไปที่ `index.html` — จำเป็นมากสำหรับ React Router เพราะถ้าไม่มีไฟล์นี้ การ refresh หน้าเว็บตรงๆ ที่ path เช่น `/assets/xxx` จะเจอ 404 จาก Vercel (เพราะ Vercel serve static file ตรงๆ ไม่รู้ว่าต้องส่งกลับไปให้ React Router จัดการ routing เอง)
-#   - i t - a s s e t - c u s t o d y  
- 
+**หมายเหตุ:**
+- Render free tier จะ "หลับ" หลัง idle ไปสักพัก คำขอแรกหลังตื่นจะช้ากว่าปกติ (cold start) — ปกติของ free tier ไม่ใช่ bug
+- ต่างจาก Vercel ที่ auto-detect ทุกอย่าง Netlify ต้องตั้ง **Base directory = frontend** ด้วยตัวเองเสมอ ไม่งั้นจะพยายาม build จาก root ของ repo แล้วหา `package.json` ไม่เจอ

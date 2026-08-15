@@ -19,6 +19,8 @@ export default function AssetDetail() {
   const [history, setHistory] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [employeeId, setEmployeeId] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
+  const [assignedDate, setAssignedDate] = useState(today);
   const [dueDate, setDueDate] = useState("");
 
   const load = () => {
@@ -40,9 +42,11 @@ export default function AssetDetail() {
       asset_id: id,
       employee_id: emp.id,
       department_id: emp.department_id,
+      assigned_date: assignedDate || null,
       due_date: dueDate || null,
     });
     setEmployeeId("");
+    setAssignedDate(today);
     setDueDate("");
     load();
   };
@@ -139,6 +143,16 @@ export default function AssetDetail() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate mb-1">วันที่รับไป</label>
+              <input
+                type="date"
+                value={assignedDate}
+                onChange={(e) => setAssignedDate(e.target.value)}
+                className="border border-gray-300 rounded-md px-2 py-1.5"
+                required
+              />
             </div>
             <div>
               <label className="block text-xs text-slate mb-1">กำหนดคืน (ถ้ามี)</label>

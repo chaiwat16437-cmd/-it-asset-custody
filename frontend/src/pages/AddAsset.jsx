@@ -5,11 +5,7 @@ import { createAsset, getCategories, createCategory } from "../api/client";
 const emptyForm = {
   category_id: "",
   asset_code: "",
-  brand: "",
-  model: "",
   serial_number: "",
-  purchase_date: "",
-  purchase_price: "",
   notes: "",
 };
 
@@ -51,11 +47,7 @@ export default function AddAsset() {
 
     setSubmitting(true);
     try {
-      const created = await createAsset({
-        ...form,
-        purchase_price: form.purchase_price ? Number(form.purchase_price) : null,
-        purchase_date: form.purchase_date || null,
-      });
+      const created = await createAsset(form);
       navigate(`/assets/${created.id}`);
     } catch (err) {
       setError(err?.response?.data?.error || "เพิ่มอุปกรณ์ไม่สำเร็จ กรุณาลองใหม่");
@@ -132,29 +124,6 @@ export default function AddAsset() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-slate mb-1">ยี่ห้อ</label>
-            <input
-              type="text"
-              value={form.brand}
-              onChange={update("brand")}
-              placeholder="เช่น Dell"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-slate mb-1">รุ่น</label>
-            <input
-              type="text"
-              value={form.model}
-              onChange={update("model")}
-              placeholder="เช่น Latitude 5440"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-
         <div>
           <label className="block text-xs text-slate mb-1">หมายเลขเครื่อง (Serial Number)</label>
           <input
@@ -163,29 +132,6 @@ export default function AddAsset() {
             onChange={update("serial_number")}
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-slate mb-1">วันที่ซื้อ</label>
-            <input
-              type="date"
-              value={form.purchase_date}
-              onChange={update("purchase_date")}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-slate mb-1">ราคา (บาท)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.purchase_price}
-              onChange={update("purchase_price")}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-            />
-          </div>
         </div>
 
         <div>

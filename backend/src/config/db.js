@@ -3,8 +3,14 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Supabase (และ managed Postgres เจ้าอื่นๆ ส่วนใหญ่) บังคับต่อผ่าน SSL เสมอ
+// ส่วน Postgres ที่รันเองใน docker-compose (localhost/db) ไม่รองรับ SSL
+// จึงเปิด SSL เฉพาะตอนไม่ได้ต่อ localhost/db เท่านั้น
+const isLocalDb = /localhost|127\.0\.0\.1|@db:/.test(process.env.DATABASE_URL || "");
+
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: isLocalDb ? false : { rejectUnauthorized: false },
 });
 
 pool.on("error", (err) => {
